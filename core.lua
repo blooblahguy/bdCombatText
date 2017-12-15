@@ -337,7 +337,7 @@ bdct.animator:SetScript("OnUpdate", function(self, elasped)
 			end
 		end
 
-		-- inomcing
+		-- incoming
 		for k, frame in pairs(incoming_animate) do
 			-- start fading alpha after given delay
 			frame.delay = frame.delay + elapsed
@@ -385,7 +385,7 @@ bdct.animator:SetScript("OnUpdate", function(self, elasped)
 		level = level + 1
 	end
 
-	-- inomcing
+	-- incoming
 	local lastframe = nil
 	local level = 1
 	for k, v in pairs(incoming_animate) do
