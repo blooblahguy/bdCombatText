@@ -100,6 +100,15 @@ defaults[#defaults] = {tab = {
 	type = "tab",
 	value = "Alerts"
 }}
+defaults[#defaults] = {alertsfontsize = {
+	type = "slider",
+	value = 14,
+	min = 6,
+	max = 30,
+	step = 2,
+	label = "Alerts Font Size",
+	callback = function bdct:callback() end
+}}
 
 bdCore:addModule("Combat Text", defaults)
 

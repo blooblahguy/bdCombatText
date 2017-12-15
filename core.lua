@@ -1,6 +1,9 @@
 ﻿local addon, bdct = ...
 local config = bdCore.config.profile['Combat Text']
 
+function bdct:callback()
+
+end
 
 SetCVar("floatingCombatTextCombatDamage", 1)
 SetCVar("floatingCombatTextCombatHealing", 0)
@@ -197,22 +200,27 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 			local icon = select(3, GetSpellInfo(spellID))
 			local text = "|cff"..hex..bdct:numberize(amount).."|r"
 
+			-- add additional text info
 			if (number > 1 or crit > 0 or less > 0) then
 				text = text.." ("
 				if (num > 0) then
-					text = text.."x"..num.." , "
+					text = text.."x"..num..", "
 				end
 				if (crit > 0) then
-					text = text.."!"..crit.." , "
+					text = text.."!"..crit..", "
 				end
 				if (less > 0) then
-					text = text.."<|cff777777"..less.."|r , "
+					text = text.."<|cff777777"..less.."|r, "
 				end
-				text = substr(text, 0, -3)
-				text = text..")"
+				text = substr(text, 0, -2) -- trim the last comma
+				text = text..")" -- close the parentheses
 			end
 
-			local showascrit = number / crit > .50 or false
+			-- some threshold to determine if we show this as a crit
+			local showcrit = false
+			if (crit > 0) then
+				showcrit = number / crit > .5 or false
+			end
 
 			bdct:animate(bdct.outgoing, timestamp, icon, text, showascrit)
 			--outgoing_animate[timestamp] = {frame, icon, text, showascrit}

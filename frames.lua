@@ -53,6 +53,14 @@ function GetFrame(parent)
 		frame.icon.bg:SetPoint("TOPLEFT", frame.icon, "TOPLEFT", -2, 2)
 		frame.icon.bg:SetPoint("BOTTOMRIGHT", frame.icon, "BOTTOMRIGHT", 2, -2)
 	end
+
+	if (parent == bdct.outgoing) then
+		frame.text:SetFont(bdCore.media.font, config.outgoingfontsize, "OUTLINE")
+	elseif (parent == bdct.incoming) then
+		frame.text:SetFont(bdCore.media.font, config.incomingfontsize, "OUTLINE")
+	elseif (parent == bdct.alerts) then
+		frame.text:SetFont(bdCore.media.font, config.alertsfontsize, "OUTLINE")
+	end
 	
 	frame:SetAlpha(1)
 	frame:Show()
@@ -69,8 +77,8 @@ function ReleaseFrame(frame)
 	frame:ClearAllPoints()
 	frame.icon:ClearAllPoints()
 	frame.text:ClearAllPoints()
-	frame.text:SetFont(bdCore.media.font,config.fontsize,"OUTLINE")
 	frame.delay = 0
+	
 	table.insert(frame_cache, frame)
 end
 
