@@ -1,8 +1,11 @@
-## Interface: 70000
+## Interface: 73000
 ## Title: |cffA02C2Fbd|rCombatText
 ## Version: 0
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Dependencies: bdCore
 
+config.lua
+functions.lua
+frames.lua
 core.lua
