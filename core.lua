@@ -7,7 +7,6 @@ end
 
 SetCVar("floatingCombatTextCombatDamage", 1)
 SetCVar("floatingCombatTextCombatHealing", 0)
-local schoolColors = COMBATLOG_DEFAULT_COLORS.schoolColoring
 
 -- here are our arrays
 local data_out = {}
@@ -39,33 +38,40 @@ alerts_events["_AURA_APPLIED"] = true
 alerts_events["_AURA_REMOVED"] = true
 alerts_events["_DURABILITY_DAMAGE"] = true
 
-
+local schoolColors = COMBATLOG_DEFAULT_COLORS
 -- ok lets parse the combat log and sort things into incoming frame and outgoing frame
 bdct.combat_parser = CreateFrame("frame", nil)
 bdct.combat_parser:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	local subevent = select(2, ...)
-	local sourceName = select(5, ...)
-	local destName = select(9, ...)
+	local sourceGUID = select(4, ...)
+	local destGUID = select(8, ...)
 	local allow = false
 	local incoming = false
 	local outgoing = false
 	local isevent = false
 
 	-- if this isn't on or from the player then we don't care about it
-	if (not (UnitExists(sourceName) and UnitIsUnit(sourceName, "player")) and not (UnitExists(destName) and UnitIsUnit(destName, "player"))) then return end
+	local pet = UnitGUID("pet")
+	local gself = UnitGUID("player")
+	if (not (pet == sourceGUID or gself == sourceGUID) and not (pet == destGUID or gself == destGUID) ) then 
+		print("failing", ...)
+		return
+	end
+	--print(subevent)
 
 	-- filter out events that don't match here
 	for k, v in pairs(inc_events) do
-		if (allow) then break end
+		if (incoming) then break end
 		if (string.find(subevent, k)) then
 			allow = true
 			incoming = true
 			break
 		end
 	end
-	for k, v in pairs(inc_events) do
-		if (allow) then break end
+	for k, v in pairs(out_events) do
+		if (outgoing) then break end
+		--print(string.find(subevent, k), subevent, k)
 		if (string.find(subevent, k)) then
 			allow = true
 			outgoing = true
@@ -73,7 +79,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 		end
 	end
 	for k, v in pairs(alerts_events) do
-		if (allow) then break end
+		if (isevent) then break end
 		if (string.find(subevent, k)) then
 			allow = true
 			isevent = true
@@ -85,8 +91,6 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 
 	-- now lets collect the vars
 	local timestamp, subevent, hideCaster, sourceGUID, sourceName, sourceFlags, sourceRaidFlags, destGUID, destName, destFlags, destRaidFlags, spellID, spellName, spellSchool, arg15, arg16, arg17, arg18, arg19, arg20, arg21, arg22, arg23, arg24 = ...
-
-	print(...)
 
 	-- we'll consistently pass the same data for ease
 	local data = {}
@@ -103,21 +107,21 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	if (string.find(subevent, "_DAMAGE")) then
 		data.amount = arg15 or 0
 		data.over = arg16 or 0
-		data.crit = data.crit + (arg21 or 0)
-		data.crit = data.crit + (arg23 or 0)
+		data.crit = data.crit + (arg21 and 1 or 0)
+		data.crit = data.crit + (arg23 and 1 or 0)
 		data.school = spellSchool or arg17 or false
-		data.less = data.less + arg18
-		data.less = data.less + arg19
-		data.less = data.less + arg20
-		data.less = data.less + arg22
+		--data.less = data.less + (arg18 or 0)
+		--data.less = data.less + (arg19 or 0)
+		data.less = data.less + (arg20 or 0)
+		--data.less = data.less + (arg22 or 0)
 
 		data.prefix = "damage"
-	elseif (string.find(subevent, "_MISSED"))
+	elseif (string.find(subevent, "_MISSED")) then
 		data.amount = 0
 		data.school = arg15 or false
 
 		data.prefix = "miss"
-	elseif (string.find(subevent, "_HEAL"))
+	elseif (string.find(subevent, "_HEAL")) then
 		data.amount = arg15 or 0
 		data.over = arg16 or 0
 		data.crit = arg18 or 0
@@ -125,7 +129,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 		data.school = spellSchool or false
 
 		data.prefix = "heal"
-	elseif (string.find(subevent, "_DRAIN") or string.find(subevent, "_LEECH"))
+	elseif (string.find(subevent, "_DRAIN") or string.find(subevent, "_LEECH")) then
 		data.amount = arg15 or arg17 or 0
 		data.school = arg16 or 0
 
@@ -133,15 +137,19 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	end
 
 	-- outgoing with player source and whitelisted event
-	if (UnitIsUnit(sourceName, "player") and outgoing) then
+
+	--print("post parse", sourceName, subevent)
+	if ((sourceGUID == gself or sourceGUID == pet) and outgoing) then
 		if (not data_out[data.prefix..':'..data.spellID]) then
 			data_out[data.prefix..':'..data.spellID] = {}
 			data_out[data.prefix..':'..data.spellID][timestamp] = data
 		end
+
+		print("data_out")
 	end
 
 	-- incoming with player destination and whitelisted event
-	if (UnitIsUnit(destName, "player") and incoming) then
+	if ((destGUID == gself) and incoming) then
 		if (not data_inc[data.prefix..':'..data.spellID]) then
 			data_inc[data.prefix..':'..data.spellID] = {}
 			data_inc[data.prefix..':'..data.spellID][timestamp] = data
@@ -158,13 +166,22 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 end)
 
 -- now lets parse out the entires in each array and then clear the tables for more grouping
+local schoolColoring = {
+	[SCHOOL_MASK_NONE]	= {a=1.0,r=1.00,g=1.00,b=1.00};
+	[SCHOOL_MASK_PHYSICAL]	= {a=1.0,r=1.00,g=1.00,b=0.00};
+	[SCHOOL_MASK_HOLY] 	= {a=1.0,r=1.00,g=0.90,b=0.50};
+	[SCHOOL_MASK_FIRE] 	= {a=1.0,r=1.00,g=0.50,b=0.00};
+	[SCHOOL_MASK_NATURE] 	= {a=1.0,r=0.30,g=1.00,b=0.30};
+	[SCHOOL_MASK_FROST] 	= {a=1.0,r=0.50,g=1.00,b=1.00};
+	[SCHOOL_MASK_SHADOW] 	= {a=1.0,r=0.50,g=0.50,b=1.00};
+	[SCHOOL_MASK_ARCANE] 	= {a=1.0,r=1.00,g=0.50,b=1.00};
+};
 bdct.data_parser = CreateFrame("frame", nil, UIParent)
 bdct.data_parser.inctotal = 0
 bdct.data_parser.outtotal = 0
 bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 	self.inctotal = self.inctotal + elapsed
 	self.outtotal = self.outtotal + elapsed
-	self.eventtotal = self.eventtotal + elapsed
 
 	-- outgoing
 	if (self.outtotal >= config.outgoingupdate) then
@@ -187,10 +204,12 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				crit = crit + data.crit
 				less = less + data.less
 				over = over + data.over
-				if (not school) then
+				--[[if (not school and data.school and #schoolColoring[data.school]) then
 					school = data.school
-					colors = unpack(schoolColors[data.school])
-				end
+					print('school', data.school)
+					print(schoolColoring[data.school]. unpack(schoolColoring[data.school]))
+					colors = unpack(schoolColoring[data.school])
+				end--]]
 			end
 
 			-- colors to hex so we can color the font string a bunch
@@ -203,8 +222,8 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 			-- add additional text info
 			if (number > 1 or crit > 0 or less > 0) then
 				text = text.." ("
-				if (num > 0) then
-					text = text.."x"..num..", "
+				if (number > 0) then
+					text = text.."x"..number..", "
 				end
 				if (crit > 0) then
 					text = text.."!"..crit..", "
@@ -212,7 +231,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				if (less > 0) then
 					text = text.."<|cff777777"..less.."|r, "
 				end
-				text = substr(text, 0, -2) -- trim the last comma
+				text = strsub(text, 0, -2) -- trim the last comma
 				text = text..")" -- close the parentheses
 			end
 
@@ -291,6 +310,8 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 	-- pull a frame and lets do what we know needs to be done
 	local frame = GetFrame(parent)
 
+	local frameheight = 10+config.outgoingfontsize
+
 	frame.text:SetText(text)
 	frame.icon:SetTexture(icon)
 	frame.icon.bg:Show()
@@ -300,6 +321,8 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 		frame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 		frame.text:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -(frameheight+2), 4)
 		frame.icon:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -6, 4)
+
+		print("go out")
 
 		table.insert(outgoing_animate, frame)	
 	elseif (parent == bdct.incoming) then
@@ -315,7 +338,7 @@ end
 
 bdct.animator = CreateFrame("frame", nil, UIParent)
 bdct.animator.total = 0
-bdct.animator:SetScript("OnUpdate", function(self, elasped)
+bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 	self.total = self.total + elapsed
 
 	-------------------------
@@ -328,12 +351,13 @@ bdct.animator:SetScript("OnUpdate", function(self, elasped)
 			-- start fading alpha after given delay
 			frame.delay = frame.delay + elapsed
 			if (frame.delay > 1.5) then
-				frame:SetAlpha(frame:GetAlpha()-0.02)
+				frame:SetAlpha(frame:GetAlpha()-0.05)
 			end
 			-- once alpha hits 0 we're done, return the frame
 			if (frame:GetAlpha() == 0) then
 				outgoing_animate[k] = nil
 				ReleaseFrame(frame)
+				print("dont with frame")
 			end
 		end
 
@@ -379,7 +403,7 @@ bdct.animator:SetScript("OnUpdate", function(self, elasped)
 		if (lastframe) then
 			v:SetPoint("BOTTOMRIGHT", lastframe, "TOPRIGHT", 0, 0)
 		else
-			v:SetPoint("BOTTOMRIGHT", outgoing, "BOTTOMRIGHT", 0, 0)
+			v:SetPoint("BOTTOMRIGHT", bdct.outgoing, "BOTTOMRIGHT", 0, 0)
 		end
 		lastframe = v
 		level = level + 1
@@ -395,7 +419,7 @@ bdct.animator:SetScript("OnUpdate", function(self, elasped)
 		if (lastframe) then
 			v:SetPoint("BOTTOMLEFT", lastframe, "TOPLEFT", 0, 0)
 		else
-			v:SetPoint("BOTTOMLEFT", incoming, "BOTTOMLEFT", 0, 0)
+			v:SetPoint("BOTTOMLEFT", bdct.incoming, "BOTTOMLEFT", 0, 0)
 		end
 		lastframe = v
 		level = level + 1

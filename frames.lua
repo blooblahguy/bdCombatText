@@ -1,9 +1,7 @@
 local addon, bdct = ...
 local config = bdCore.config.profile['Combat Text']
 
-local frameheight = 10+config.fontsize
-
-bdct.incoming =  CreateFrame('frame', "bdCT_Outgoing", UIParent)
+bdct.incoming =  CreateFrame('frame', "bdCT_Incoming", UIParent)
 bdct.incoming:SetPoint("CENTER", UIParent, "CENTER", -500, 0)
 bdct.incoming:SetSize(200, 300)
 bdct.incoming:SetFrameStrata("TOOLTIP")
@@ -29,13 +27,23 @@ local incoming_entries = {}
 function GetFrame(parent)
 	local frame = table.remove(frame_cache) or CreateFrame("Frame", nil, UIParent)
 	frame:SetParent(parent)
+
+	local frameheight = 10+config.outgoingfontsize
+	
 	frame:SetSize(200, frameheight)
 	
 	if (not frame.text) then
 		frame.text = frame:CreateFontString("amount")
-		frame.text:SetFont(bdCore.media.font, config.fontsize,"OUTLINE")
-		frame.text:SetText("")
 	end
+
+	if (parent == bdct.outgoing) then
+		frame.text:SetFont(bdCore.media.font, config.outgoingfontsize, "OUTLINE")
+	elseif (parent == bdct.incoming) then
+		frame.text:SetFont(bdCore.media.font, config.incomingfontsize, "OUTLINE")
+	elseif (parent == bdct.alerts) then
+		frame.text:SetFont(bdCore.media.font, config.alertsfontsize, "OUTLINE")
+	end
+	frame.text:SetText("")
 	
 	if (not frame.icon) then
 		frame.icon = frame:CreateTexture(nil, "ARTWORK")
@@ -47,20 +55,14 @@ function GetFrame(parent)
 	
 	if (not frame.icon.bg) then
 		frame.icon.bg = frame:CreateTexture(nil, "BORDER")
-		frame.icon.bg:SetTexture(media.flat)
+		frame.icon.bg:SetTexture(bdCore.media.flat)
 		frame.icon.bg:Hide()
 		frame.icon.bg:SetVertexColor(0,0,0,1)
 		frame.icon.bg:SetPoint("TOPLEFT", frame.icon, "TOPLEFT", -2, 2)
 		frame.icon.bg:SetPoint("BOTTOMRIGHT", frame.icon, "BOTTOMRIGHT", 2, -2)
 	end
 
-	if (parent == bdct.outgoing) then
-		frame.text:SetFont(bdCore.media.font, config.outgoingfontsize, "OUTLINE")
-	elseif (parent == bdct.incoming) then
-		frame.text:SetFont(bdCore.media.font, config.incomingfontsize, "OUTLINE")
-	elseif (parent == bdct.alerts) then
-		frame.text:SetFont(bdCore.media.font, config.alertsfontsize, "OUTLINE")
-	end
+	
 	
 	frame:SetAlpha(1)
 	frame:Show()

@@ -1,6 +1,5 @@
 ## Interface: 73000
 ## Title: |cffA02C2Fbd|rCombatText
-## Version: 0
 ## DefaultState: Enabled
 ## LoadOnDemand: 0
 ## Dependencies: bdCore

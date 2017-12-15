@@ -11,10 +11,10 @@ local defaults = {}
 ------------------------
 -- colors
 ------------------------
-defaults[#defaults] = {tab = {
+--[[defaults[#defaults] = {tab = {
 	type = "tab",
 	value = "Colors"
-}}
+}}--]]
 -- damage color
 -- damage color by school
 -- crit color
@@ -25,89 +25,89 @@ defaults[#defaults] = {tab = {
 ------------------------
 -- outgoing
 ------------------------
-defaults[#defaults] = {tab = {
+defaults[#defaults+1] = {tab = {
 	type = "tab",
 	value = "Outgoing"
 }}
-defaults[#defaults] = {outgoingupdate = {
+defaults[#defaults+1] = {outgoingupdate = {
 	type = "slider",
-	value = 2,
+	value = 1,
 	min = 0.1,
 	max = 5,
 	step = 0.1,
 	label = "Outgoing frame update threshold",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
-defaults[#defaults] = {outgoingfontsize = {
+defaults[#defaults+1] = {outgoingfontsize = {
 	type = "slider",
 	value = 14,
 	min = 6,
 	max = 30,
 	step = 2,
 	label = "Outoing Regular Font Size",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
-defaults[#defaults] = {outgoingcritfontsize = {
+defaults[#defaults+1] = {outgoingcritfontsize = {
 	type = "slider",
 	value = 18,
 	min = 6,
 	max = 40,
 	step = 2,
 	label = "Outoing Crit Font Size",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
 -- threshold
 
 ------------------------
 -- incoming
 ------------------------
-defaults[#defaults] = {tab = {
+defaults[#defaults+1] = {tab = {
 	type = "tab",
 	value = "Incoming"
 }}
-defaults[#defaults] = {incomingupdate = {
+defaults[#defaults+1] = {incomingupdate = {
 	type = "slider",
 	value = 1,
 	min = 0.1,
 	max = 5,
 	step = 0.1,
 	label = "Incoming frame update threshold",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
-defaults[#defaults] = {incomingfontsize = {
+defaults[#defaults+1] = {incomingfontsize = {
 	type = "slider",
 	value = 14,
 	min = 6,
 	max = 30,
 	step = 2,
 	label = "Incoming Regular Font Size",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
-defaults[#defaults] = {incomingcritfontsize = {
+defaults[#defaults+1] = {incomingcritfontsize = {
 	type = "slider",
 	value = 18,
 	min = 6,
 	max = 40,
 	step = 2,
 	label = "Incoming Crit Font Size",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
 
 ------------------------
 -- alerts
 ------------------------
-defaults[#defaults] = {tab = {
+defaults[#defaults+1] = {tab = {
 	type = "tab",
 	value = "Alerts"
 }}
-defaults[#defaults] = {alertsfontsize = {
+defaults[#defaults+1] = {alertsfontsize = {
 	type = "slider",
 	value = 14,
 	min = 6,
 	max = 30,
 	step = 2,
 	label = "Alerts Font Size",
-	callback = function bdct:callback() end
+	callback = function() bdct:callback() end
 }}
 
 bdCore:addModule("Combat Text", defaults)
