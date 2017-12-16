@@ -189,7 +189,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 		local full_data = data_out -- this is what we'll loop
 		data_out = {} -- clear so that addon can compile new data
 
-		for spellID, entries in pairs(full_data) do
+		for prefixspellID, entries in pairs(full_data) do
 			local amount = 0 -- highest number amount
 			local crit = 0 -- true or false for critical hit
 			local number = #entries -- number of hits
@@ -198,6 +198,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 			local school = false -- school, powertype
 			local timestamp = 0
 			local colors = {a=1, r=1, g=1, b=1}
+			local prefix, spellID = strsplit(":", prefixspellID)
 
 			for timestamp, data in pairs(entries) do
 				amount = amount + data.amount
