@@ -29,6 +29,12 @@ defaults[#defaults+1] = {tab = {
 	type = "tab",
 	value = "Outgoing"
 }}
+defaults[#defaults+1] = {hideautos = {
+	type = "checkbox",
+	value = true,
+	label = "Hide Auto Attacks",
+	callback = function() bdct:callback() end
+}}
 defaults[#defaults+1] = {outgoingupdate = {
 	type = "slider",
 	value = 1,
@@ -40,16 +46,16 @@ defaults[#defaults+1] = {outgoingupdate = {
 }}
 defaults[#defaults+1] = {outgoingfontsize = {
 	type = "slider",
-	value = 14,
+	value = 13,
 	min = 6,
 	max = 30,
-	step = 2,
+	step = 1,
 	label = "Outoing Regular Font Size",
 	callback = function() bdct:callback() end
 }}
 defaults[#defaults+1] = {outgoingcritfontsize = {
 	type = "slider",
-	value = 18,
+	value = 20,
 	min = 6,
 	max = 40,
 	step = 2,
