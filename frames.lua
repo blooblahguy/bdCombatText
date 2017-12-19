@@ -28,7 +28,7 @@ function GetFrame(parent)
 	local frame = table.remove(frame_cache) or CreateFrame("Frame", nil, UIParent)
 	frame:SetParent(parent)
 
-	local frameheight = 10+config.outgoingfontsize
+	local frameheight = 12+config.outgoingfontsize
 	
 	frame:SetSize(200, frameheight)
 	

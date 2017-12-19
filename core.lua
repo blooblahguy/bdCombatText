@@ -1,10 +1,6 @@
 ﻿local addon, bdct = ...
 local config = bdCore.config.profile['Combat Text']
 
-function bdct:callback()
-
-end
-
 SetCVar("floatingCombatTextCombatDamage", 1)
 SetCVar("floatingCombatTextCombatHealing", 0)
 
@@ -28,7 +24,9 @@ inc_events["_DAMAGE"] = true
 
 local out_events = {}
 out_events["_HEAL"] = true
-out_events["_DAMAGE"] = true
+out_events["SPELL_DAMAGE"] = true
+out_events['SWING_DAMAGE'] = true
+out_events['RANGE_DAMAGE'] = true
 out_events["_MISSED"] = true
 out_events["_DRAIN"] = true
 out_events["_LEECH"] = true
@@ -38,6 +36,16 @@ alerts_events["_AURA_APPLIED"] = true
 alerts_events["_AURA_REMOVED"] = true
 alerts_events["_DURABILITY_DAMAGE"] = true
 
+
+function bdct:callback()
+	if (config.hideautos) then
+		out_events['SWING_DAMAGE'] = nil
+		out_events['RANGE_DAMAGE'] = true
+	end
+end
+
+bdct:callback()
+
 local schoolColors = COMBATLOG_DEFAULT_COLORS
 -- ok lets parse the combat log and sort things into incoming frame and outgoing frame
 bdct.combat_parser = CreateFrame("frame", nil)
@@ -45,20 +53,35 @@ bdct.combat_parser:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
 bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	local subevent = select(2, ...)
 	local sourceGUID = select(4, ...)
+	local sourceFlags = select(6, ...)
 	local destGUID = select(8, ...)
+	local destFlags = select(10, ...)
 	local allow = false
 	local incoming = false
 	local outgoing = false
 	local isevent = false
-
+	local source = false
+	local dest = false
 	-- if this isn't on or from the player then we don't care about it
-	local pet = UnitGUID("pet")
-	local gself = UnitGUID("player")
-	if (not (pet == sourceGUID or gself == sourceGUID) and not (pet == destGUID or gself == destGUID) ) then 
-		print("failing", ...)
+
+
+	if (CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_ME) or 
+	CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_MINE) or
+	CombatLog_Object_IsA(sourceFlags, COMBATLOG_FILTER_MY_PET)) then
+		source = true
+	end
+
+	if (CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_ME) or 
+	CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_MINE) or
+	CombatLog_Object_IsA(destFlags, COMBATLOG_FILTER_MY_PET)) then
+		dest = true
+	end
+
+	if (not source and not dest) then
+		--print('failing cuz not mine', ...)
 		return
 	end
-	--print(subevent)
+	
 
 	-- filter out events that don't match here
 	for k, v in pairs(inc_events) do
@@ -102,19 +125,27 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	data.prefix = '' -- prefix so we don't group dmg with misses etc
 	data.spellID = spellID -- to reference if needed
 	data.subevent = subevent -- to reference if needed
+	data.timestamp = timestamp
+
+	--if (not spellID) then return end
 
 	-- parse out all events, then add to the correct table for animating
 	if (string.find(subevent, "_DAMAGE")) then
 		data.amount = arg15 or 0
 		data.over = arg16 or 0
-		data.crit = data.crit + (arg21 and 1 or 0)
-		data.crit = data.crit + (arg23 and 1 or 0)
+		if (arg21) then arg21 = 1 else arg21 = 0 end
+		-- if (arg23) then arg23 = 1 else arg23 = 0 end crushing
+		data.crit = data.crit + arg21	
 		data.school = spellSchool or arg17 or false
 		--data.less = data.less + (arg18 or 0)
 		--data.less = data.less + (arg19 or 0)
 		data.less = data.less + (arg20 or 0)
 		--data.less = data.less + (arg22 or 0)
 
+		if (subevent == "SWING_DAMAGE") then
+			data.amount = spellID or 0
+			data.spellID = 6603 -- auto attack spell			
+		end
 		data.prefix = "damage"
 	elseif (string.find(subevent, "_MISSED")) then
 		data.amount = 0
@@ -124,6 +155,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	elseif (string.find(subevent, "_HEAL")) then
 		data.amount = arg15 or 0
 		data.over = arg16 or 0
+		if (arg18) then arg18 = 1 else arg18 = 0 end
 		data.crit = arg18 or 0
 		data.less = data.less + arg17
 		data.school = spellSchool or false
@@ -136,23 +168,23 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 		data.prefix = "heal"
 	end
 
-	-- outgoing with player source and whitelisted event
+	if (data.amount > 0) then
+		-- outgoing with player source and whitelisted event
 
-	--print("post parse", sourceName, subevent)
-	if ((sourceGUID == gself or sourceGUID == pet) and outgoing) then
-		if (not data_out[data.prefix..':'..data.spellID]) then
-			data_out[data.prefix..':'..data.spellID] = {}
-			data_out[data.prefix..':'..data.spellID][timestamp] = data
+		--print("post parse", sourceName, subevent)
+		if (source and outgoing) then
+			if (not data_out[data.prefix..':'..data.spellID]) then
+				data_out[data.prefix..':'..data.spellID] = {}
+			end
+			table.insert(data_out[data.prefix..':'..data.spellID], data)
 		end
 
-		print("data_out")
-	end
-
-	-- incoming with player destination and whitelisted event
-	if ((destGUID == gself) and incoming) then
-		if (not data_inc[data.prefix..':'..data.spellID]) then
-			data_inc[data.prefix..':'..data.spellID] = {}
-			data_inc[data.prefix..':'..data.spellID][timestamp] = data
+		-- incoming with player destination and whitelisted event
+		if (dest and incoming) then
+			if (not data_inc[data.prefix..':'..data.spellID]) then
+				data_inc[data.prefix..':'..data.spellID] = {}
+				data_inc[data.prefix..':'..data.spellID][timestamp] = data
+			end
 		end
 	end
 
@@ -192,7 +224,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 		for prefixspellID, entries in pairs(full_data) do
 			local amount = 0 -- highest number amount
 			local crit = 0 -- true or false for critical hit
-			local number = #entries -- number of hits
+			local count = 0 --bdct:countTable(entries) -- number of hits
 			local less = 0 -- blocks, absorbs, resists
 			local over = 0 -- overkill, overheal
 			local school = false -- school, powertype
@@ -200,11 +232,12 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 			local colors = {a=1, r=1, g=1, b=1}
 			local prefix, spellID = strsplit(":", prefixspellID)
 
-			for timestamp, data in pairs(entries) do
+			for k, data in pairs(entries) do
 				amount = amount + data.amount
 				crit = crit + data.crit
 				less = less + data.less
 				over = over + data.over
+				count = count + 1
 				--[[if (not school and data.school and #schoolColoring[data.school]) then
 					school = data.school
 					print('school', data.school)
@@ -213,36 +246,41 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				end--]]
 			end
 
+			
+
 			-- colors to hex so we can color the font string a bunch
 			local hex = bdct:RGBPercToHex(colors.r, colors.g, colors.b)
 
 			-- compile display
+			local name = select(1, GetSpellInfo(spellID))
+			--if (name == "Leech" ) then print(spellID) end 143924
 			local icon = select(3, GetSpellInfo(spellID))
-			local text = "|cff"..hex..bdct:numberize(amount).."|r"
+			local text = ""
 
 			-- add additional text info
-			if (number > 1 or crit > 0 or less > 0) then
+			if (count > 1 or crit > 1 or less > 0) then
 				text = text.." ("
-				if (number > 0) then
-					text = text.."x"..number..", "
+				if (count > 1) then
+					text = text.."x"..count..", "
 				end
-				if (crit > 0) then
+				if (crit > 1) then
 					text = text.."!"..crit..", "
 				end
 				if (less > 0) then
 					text = text.."<|cff777777"..less.."|r, "
 				end
-				text = strsub(text, 0, -2) -- trim the last comma
-				text = text..")" -- close the parentheses
+				text = strsub(text, 0, -3) -- trim the last comma
+				text = text..") " -- close the parentheses
 			end
+			text = text.." |cff"..hex..bdct:numberize(amount).."|r"
 
 			-- some threshold to determine if we show this as a crit
 			local showcrit = false
 			if (crit > 0) then
-				showcrit = number / crit > .5 or false
+				showcrit = count / crit > .5 or false
 			end
 
-			bdct:animate(bdct.outgoing, timestamp, icon, text, showascrit)
+			bdct:animate(bdct.outgoing, timestamp, icon, text, showcrit)
 			--outgoing_animate[timestamp] = {frame, icon, text, showascrit}
 			-- based on options, we should animate these onto a nameplate if possible, or just always our anchor frames
 		end
@@ -256,47 +294,67 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 		local full_data = data_inc -- this is what we'll loop
 		data_inc = {} -- clear so that addon can compile new data
 
-		--[[for spellID, entries in pairs(full_data) do
+		for prefixspellID, entries in pairs(full_data) do
 			local amount = 0 -- highest number amount
 			local crit = 0 -- true or false for critical hit
-			local number = #entries -- number of hits
+			local count = 0 --bdct:countTable(entries) -- number of hits
 			local less = 0 -- blocks, absorbs, resists
 			local over = 0 -- overkill, overheal
 			local school = false -- school, powertype
+			local timestamp = 0
+			local colors = {a=1, r=1, g=1, b=1}
+			local prefix, spellID = strsplit(":", prefixspellID)
 
-			for timestamp, data in pairs(entries) do
+			for k, data in pairs(entries) do
 				amount = amount + data.amount
 				crit = crit + data.crit
 				less = less + data.less
 				over = over + data.over
-				if (not school) then
+				count = count + 1
+				--[[if (not school and data.school and #schoolColoring[data.school]) then
 					school = data.school
-				end
+					print('school', data.school)
+					print(schoolColoring[data.school]. unpack(schoolColoring[data.school]))
+					colors = unpack(schoolColoring[data.school])
+				end--]]
 			end
+
+			
+
+			-- colors to hex so we can color the font string a bunch
+			local hex = bdct:RGBPercToHex(colors.r, colors.g, colors.b)
 
 			-- compile display
+			local name = select(1, GetSpellInfo(spellID))
+			--if (name == "Leech" ) then print(spellID) end 143924
 			local icon = select(3, GetSpellInfo(spellID))
-			local text = amount
+			local text = ""
 
-			if (number > 1 or crit > 0 or less > 0) then
+			-- add additional text info
+			if (count > 1 or crit > 1 or less > 0) then
 				text = text.." ("
-				if (num > 0) then
-					text = text.."x"..num.." , "
+				if (count > 1) then
+					text = text.."x"..count..", "
 				end
-				if (crit > 0) then
-					text = text.."!"..crit.." , "
+				if (crit > 1) then
+					text = text.."!"..crit..", "
 				end
 				if (less > 0) then
-					text = text.."<"..crit.." , "
+					text = text.."<|cff777777"..less.."|r, "
 				end
-				text = substr(text, 0, -3)
-				text = text..")"
+				text = strsub(text, 0, -3) -- trim the last comma
+				text = text..") " -- close the parentheses
+			end
+			text = text.." |cff"..hex..bdct:numberize(amount).."|r"
+
+			-- some threshold to determine if we show this as a crit
+			local showcrit = false
+			if (crit > 0) then
+				showcrit = count / crit > .5 or false
 			end
 
-			local showascrit = number / crit > .50 or false
-			-- outgoing_animate(frame, icon, text, showascrit)
-			-- based on options, we should animate these onto a nameplate if possible, or just always our anchor frames
-		end--]]
+			bdct:animate(bdct.outgoing, timestamp, icon, text, showcrit)
+		end
 	end
 
 	-- process alerts immediately
@@ -317,77 +375,79 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 	frame.icon:SetTexture(icon)
 	frame.icon.bg:Show()
 
+		
+
 	-- position depending on frame
 	if (parent == bdct.outgoing) then
 		frame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
-		frame.text:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -(frameheight+2), 4)
-		frame.icon:SetPoint("BOTTOMRIGHT", frame, "BOTTOMRIGHT", -6, 4)
+		
+		if (showcrit) then
+			frame.text:SetFont(bdCore.media.font, config.outgoingcritfontsize, "THINOUTLINE")
+			frame.crit = true
+		else
+			frame.text:SetFont(bdCore.media.font, config.outgoingfontsize, "THINOUTLINE")
+			frame.crit = false
+		end
 
-		print("go out")
+		frame.text:SetPoint("RIGHT", frame, "RIGHT", -(frameheight+2), 0)
+		frame.icon:SetPoint("RIGHT", frame, "RIGHT", -6, 0)
 
 		table.insert(outgoing_animate, frame)	
 	elseif (parent == bdct.incoming) then
 		frame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
-		frame.text:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", (frameheight+2), 4)
+		frame.text:SetPoint("LEFT", frame, "LEFT", (frameheight+2), 0)
 		frame.icon:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 6, 4)
 
 		table.insert(incoming_animate, frame)	
 	elseif (parent == bdct.alerts) then
 
 	end
+
+	bdct.animator:main()
 end
 
 bdct.animator = CreateFrame("frame", nil, UIParent)
 bdct.animator.total = 0
-bdct.animator:SetScript("OnUpdate", function(self, elapsed)
-	self.total = self.total + elapsed
-
-	-------------------------
-	-- animate alpha (20fps)
-	-------------------------
-	-- outgoing
-	if (self.total > 0.05) then
-		self.total = 0
-		for k, frame in pairs(outgoing_animate) do
-			-- start fading alpha after given delay
-			frame.delay = frame.delay + elapsed
-			if (frame.delay > 1.5) then
-				frame:SetAlpha(frame:GetAlpha()-0.05)
-			end
-			-- once alpha hits 0 we're done, return the frame
-			if (frame:GetAlpha() == 0) then
-				outgoing_animate[k] = nil
-				ReleaseFrame(frame)
-				print("dont with frame")
-			end
+function bdct.animator:main(elapsed)
+	if (not elapsed) then elapsed = 0 end
+	for k, frame in pairs(outgoing_animate) do
+		-- start fading alpha after given delay
+		frame.delay = frame.delay + elapsed
+		if (frame.delay > 1.5) then
+			frame:SetAlpha(frame:GetAlpha()-0.02)
 		end
-
-		-- incoming
-		for k, frame in pairs(incoming_animate) do
-			-- start fading alpha after given delay
-			frame.delay = frame.delay + elapsed
-			if (frame.delay > 1.5) then
-				frame:SetAlpha(frame:GetAlpha()-0.02)
-			end
-			-- once alpha hits 0 we're done, return the frame
-			if (frame:GetAlpha() == 0) then
-				outgoing_animate[k] = nil
-				ReleaseFrame(frame)
-			end
+		-- once alpha hits 0 we're done, return the frame
+		if (frame:GetAlpha() == 0) then
+			outgoing_animate[k] = nil
+			ReleaseFrame(frame)
 		end
+	end
 
-		-- alerts
-		for k, frame in pairs(alerts_animate) do
-			-- start fading alpha after given delay
-			frame.delay = frame.delay + elapsed
-			if (frame.delay > 1.5) then
-				frame:SetAlpha(frame:GetAlpha()-0.02)
-			end
-			-- once alpha hits 0 we're done, return the frame
-			if (frame:GetAlpha() == 0) then
-				outgoing_animate[k] = nil
-				ReleaseFrame(frame)
-			end
+	-- incoming
+	for k, frame in pairs(incoming_animate) do
+		-- start fading alpha after given delay
+		frame.delay = frame.delay + elapsed
+		if (frame.delay > 1.5) then
+			frame:SetAlpha(frame:GetAlpha()-0.02)
+		end
+		-- once alpha hits 0 we're done, return the frame
+		if (frame:GetAlpha() == 0) then
+			outgoing_animate[k] = nil
+			ReleaseFrame(frame)
+		end
+	end
+
+	-- alerts
+	for k, frame in pairs(alerts_animate) do
+		-- start fading alpha after given delay
+		frame.delay = frame.delay + elapsed
+		if (frame.delay > 1.5) then
+			frame:SetAlpha(frame:GetAlpha()-0.02)
+		end
+		-- once alpha hits 0 we're done, return the frame
+		if (frame:GetAlpha() == 0) then
+			outgoing_animate[k] = nil
+			ReleaseFrame(frame)
 		end
 	end
 
@@ -399,7 +459,7 @@ bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 	local level = 1
 	for k, v in pairs(outgoing_animate) do
 		v:SetFrameLevel(level)
-		local alpha = v:GetAlpha() > .33 and 1 or v:GetAlpha() * 3.3
+		local alpha = v:GetAlpha() > .5 and 1 or v:GetAlpha() * 2
 		v:SetHeight(v:GetHeight()*alpha)
 		if (lastframe) then
 			v:SetPoint("BOTTOMRIGHT", lastframe, "TOPRIGHT", 0, 0)
@@ -425,7 +485,18 @@ bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 		lastframe = v
 		level = level + 1
 	end
+end
+bdct.animator:SetScript("OnUpdate", function(self, elapsed)
+	self.total = self.total + elapsed
 
+	-------------------------
+	-- animate alpha (20fps)
+	-------------------------
+	-- outgoing
+	if (self.total > 0.01) then
+		self.total = 0
+		bdct.animator:main(elapsed)
+	end
 end)
 
 	
