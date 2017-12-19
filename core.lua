@@ -78,7 +78,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	end
 
 	if (not source and not dest) then
-		print('failing cuz not mine', ...)
+		--print('failing cuz not mine', ...)
 		return
 	end
 	
@@ -294,47 +294,67 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 		local full_data = data_inc -- this is what we'll loop
 		data_inc = {} -- clear so that addon can compile new data
 
-		--[[for spellID, entries in pairs(full_data) do
+		for prefixspellID, entries in pairs(full_data) do
 			local amount = 0 -- highest number amount
 			local crit = 0 -- true or false for critical hit
-			local number = #entries -- number of hits
+			local count = 0 --bdct:countTable(entries) -- number of hits
 			local less = 0 -- blocks, absorbs, resists
 			local over = 0 -- overkill, overheal
 			local school = false -- school, powertype
+			local timestamp = 0
+			local colors = {a=1, r=1, g=1, b=1}
+			local prefix, spellID = strsplit(":", prefixspellID)
 
-			for timestamp, data in pairs(entries) do
+			for k, data in pairs(entries) do
 				amount = amount + data.amount
 				crit = crit + data.crit
 				less = less + data.less
 				over = over + data.over
-				if (not school) then
+				count = count + 1
+				--[[if (not school and data.school and #schoolColoring[data.school]) then
 					school = data.school
-				end
+					print('school', data.school)
+					print(schoolColoring[data.school]. unpack(schoolColoring[data.school]))
+					colors = unpack(schoolColoring[data.school])
+				end--]]
 			end
+
+			
+
+			-- colors to hex so we can color the font string a bunch
+			local hex = bdct:RGBPercToHex(colors.r, colors.g, colors.b)
 
 			-- compile display
+			local name = select(1, GetSpellInfo(spellID))
+			--if (name == "Leech" ) then print(spellID) end 143924
 			local icon = select(3, GetSpellInfo(spellID))
-			local text = amount
+			local text = ""
 
-			if (number > 1 or crit > 0 or less > 0) then
+			-- add additional text info
+			if (count > 1 or crit > 1 or less > 0) then
 				text = text.." ("
-				if (num > 0) then
-					text = text.."x"..num.." , "
+				if (count > 1) then
+					text = text.."x"..count..", "
 				end
-				if (crit > 0) then
-					text = text.."!"..crit.." , "
+				if (crit > 1) then
+					text = text.."!"..crit..", "
 				end
 				if (less > 0) then
-					text = text.."<"..crit.." , "
+					text = text.."<|cff777777"..less.."|r, "
 				end
-				text = substr(text, 0, -3)
-				text = text..")"
+				text = strsub(text, 0, -3) -- trim the last comma
+				text = text..") " -- close the parentheses
+			end
+			text = text.." |cff"..hex..bdct:numberize(amount).."|r"
+
+			-- some threshold to determine if we show this as a crit
+			local showcrit = false
+			if (crit > 0) then
+				showcrit = count / crit > .5 or false
 			end
 
-			local showascrit = number / crit > .50 or false
-			-- outgoing_animate(frame, icon, text, showascrit)
-			-- based on options, we should animate these onto a nameplate if possible, or just always our anchor frames
-		end--]]
+			bdct:animate(bdct.outgoing, timestamp, icon, text, showcrit)
+		end
 	end
 
 	-- process alerts immediately
