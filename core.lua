@@ -32,9 +32,9 @@ out_events["_DRAIN"] = true
 out_events["_LEECH"] = true
 
 local alerts_events = {}
-alerts_events["_AURA_APPLIED"] = true
-alerts_events["_AURA_REMOVED"] = true
-alerts_events["_DURABILITY_DAMAGE"] = true
+--alerts_events["_AURA_APPLIED"] = true
+--alerts_events["_AURA_REMOVED"] = true
+--alerts_events["_DURABILITY_DAMAGE"] = true
 
 
 function bdct:callback()
@@ -46,7 +46,8 @@ end
 
 bdct:callback()
 
-local schoolColors = COMBATLOG_DEFAULT_COLORS
+LoadAddOn("Blizzard_CombatLog")
+local schoolColors = COMBATLOG_DEFAULT_COLORS.schoolColoring
 -- ok lets parse the combat log and sort things into incoming frame and outgoing frame
 bdct.combat_parser = CreateFrame("frame", nil)
 bdct.combat_parser:RegisterEvent("COMBAT_LOG_EVENT_UNFILTERED")
@@ -353,7 +354,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				showcrit = count / crit > .5 or false
 			end
 
-			bdct:animate(bdct.outgoing, timestamp, icon, text, showcrit)
+			bdct:animate(bdct.incoming, timestamp, icon, text, showcrit)
 		end
 	end
 
