@@ -28,8 +28,8 @@ out_events["SPELL_DAMAGE"] = true
 out_events['SWING_DAMAGE'] = true
 out_events['RANGE_DAMAGE'] = true
 out_events["_MISSED"] = true
-out_events["_DRAIN"] = true
-out_events["_LEECH"] = true
+--out_events["_DRAIN"] = true
+--out_events["_LEECH"] = true
 
 local alerts_events = {}
 --alerts_events["_AURA_APPLIED"] = true
@@ -199,7 +199,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 end)
 
 -- now lets parse out the entires in each array and then clear the tables for more grouping
-local schoolColoring = {
+--[[local schoolColoring = {
 	[SCHOOL_MASK_NONE]	= {a=1.0,r=1.00,g=1.00,b=1.00};
 	[SCHOOL_MASK_PHYSICAL]	= {a=1.0,r=1.00,g=1.00,b=0.00};
 	[SCHOOL_MASK_HOLY] 	= {a=1.0,r=1.00,g=0.90,b=0.50};
@@ -208,7 +208,7 @@ local schoolColoring = {
 	[SCHOOL_MASK_FROST] 	= {a=1.0,r=0.50,g=1.00,b=1.00};
 	[SCHOOL_MASK_SHADOW] 	= {a=1.0,r=0.50,g=0.50,b=1.00};
 	[SCHOOL_MASK_ARCANE] 	= {a=1.0,r=1.00,g=0.50,b=1.00};
-};
+};--]]
 bdct.data_parser = CreateFrame("frame", nil, UIParent)
 bdct.data_parser.inctotal = 0
 bdct.data_parser.outtotal = 0
@@ -239,12 +239,12 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				less = less + data.less
 				over = over + data.over
 				count = count + 1
-				--[[if (not school and data.school and #schoolColoring[data.school]) then
+				if (not school and data.school and schoolColors[data.school]) then
 					school = data.school
 					print('school', data.school)
-					print(schoolColoring[data.school]. unpack(schoolColoring[data.school]))
-					colors = unpack(schoolColoring[data.school])
-				end--]]
+					print(schoolColors[data.school], unpack(schoolColors[data.school]))
+					colors = unpack(schoolColors[data.school])
+				end
 			end
 
 			
