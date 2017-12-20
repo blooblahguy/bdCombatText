@@ -137,6 +137,8 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 		if (arg21) then arg21 = 1 else arg21 = 0 end
 		-- if (arg23) then arg23 = 1 else arg23 = 0 end crushing
 		data.crit = data.crit + arg21	
+		print(spellSchool)
+		print(arg17)
 		data.school = spellSchool or arg17 or false
 		--data.less = data.less + (arg18 or 0)
 		--data.less = data.less + (arg19 or 0)
