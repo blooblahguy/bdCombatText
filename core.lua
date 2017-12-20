@@ -184,8 +184,8 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 		if (dest and incoming) then
 			if (not data_inc[data.prefix..':'..data.spellID]) then
 				data_inc[data.prefix..':'..data.spellID] = {}
-				data_inc[data.prefix..':'..data.spellID][timestamp] = data
 			end
+			table.insert(data_inc[data.prefix..':'..data.spellID], data)
 		end
 	end
 
@@ -354,7 +354,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				showcrit = count / crit > .5 or false
 			end
 
-			--bdct:animate(bdct.incoming, timestamp, icon, text, showcrit)
+			bdct:animate(bdct.incoming, timestamp, icon, text, showcrit)
 		end
 	end
 
@@ -376,11 +376,9 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 	frame.icon:SetTexture(icon)
 	frame.icon.bg:Show()
 
-		
-
 	-- position depending on frame
 	if (parent == bdct.outgoing) then
-		frame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
+		--frame:SetPoint("BOTTOMRIGHT", parent, "BOTTOMRIGHT", 0, 0)
 		
 		if (showcrit) then
 			frame.text:SetFont(bdCore.media.font, config.outgoingcritfontsize, "THINOUTLINE")
@@ -395,7 +393,7 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 
 		table.insert(outgoing_animate, frame)	
 	elseif (parent == bdct.incoming) then
-		frame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
+		--frame:SetPoint("BOTTOMLEFT", parent, "BOTTOMLEFT", 0, 0)
 		frame.text:SetPoint("LEFT", frame, "LEFT", (frameheight+2), 0)
 		frame.icon:SetPoint("BOTTOMLEFT", frame, "BOTTOMLEFT", 6, 4)
 
@@ -433,13 +431,13 @@ function bdct.animator:main(elapsed)
 		end
 		-- once alpha hits 0 we're done, return the frame
 		if (frame:GetAlpha() == 0) then
-			outgoing_animate[k] = nil
+			incoming_animate[k] = nil
 			ReleaseFrame(frame)
 		end
 	end
 
 	-- alerts
-	for k, frame in pairs(alerts_animate) do
+	--[[for k, frame in pairs(alerts_animate) do
 		-- start fading alpha after given delay
 		frame.delay = frame.delay + elapsed
 		if (frame.delay > 1.5) then
@@ -447,10 +445,10 @@ function bdct.animator:main(elapsed)
 		end
 		-- once alpha hits 0 we're done, return the frame
 		if (frame:GetAlpha() == 0) then
-			outgoing_animate[k] = nil
+			alerts_animate[k] = nil
 			ReleaseFrame(frame)
 		end
-	end
+	end--]]
 
 	-----------------------------------------
 	-- animate position of frames and height
@@ -458,13 +456,15 @@ function bdct.animator:main(elapsed)
 	-- outgoing
 	local lastframe = nil
 	local level = 1
-	for k, v in pairs(outgoing_animate) do
-		v:ClearAllPoints()
-	end
+
 	for k, v in pairs(outgoing_animate) do
 		v:SetFrameLevel(level)
+		v:ClearAllPoints()
+
+		-- this is the animation
 		local alpha = v:GetAlpha() > .5 and 1 or v:GetAlpha() * 2
 		v:SetHeight(v:GetHeight()*alpha)
+
 		if (lastframe) then
 			v:SetPoint("BOTTOMRIGHT", lastframe, "TOPRIGHT", 0, 0)
 		else
@@ -494,13 +494,13 @@ bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 	self.total = self.total + elapsed
 
 	-------------------------
-	-- animate alpha (20fps)
+	-- animate alpha (30fps)
 	-------------------------
 	-- outgoing
-	--if (self.total > 0.01) then
-	--	self.total = 0
+	if (self.total > 0.033) then
+		self.total = 0
 		bdct.animator:main(elapsed)
-	--end
+	end
 end)
 
 	

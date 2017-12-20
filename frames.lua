@@ -72,7 +72,6 @@ function GetFrame(parent)
 	return frame
 end
 function ReleaseFrame(frame)
-	frame:ClearAllPoints()
 	frame:Hide()
 	frame.text:SetText("")
 	frame.icon:SetTexture("")
