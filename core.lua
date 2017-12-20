@@ -190,12 +190,12 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 	end
 
 	-- event with whitelisted event
-	if (isevent) then
+	--[[if (isevent) then
 		if (not data_alerts[data.prefix..':'..data.spellID]) then
 			data_alerts[data.prefix..':'..data.spellID] = {}
 		end
 		data_alerts[data.prefix..':'..data.spellID][timestamp] = data
-	end
+	end--]]
 end)
 
 -- now lets parse out the entires in each array and then clear the tables for more grouping
@@ -402,7 +402,7 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 
 	end
 
-	--bdct.animator:main()
+	bdct.animator:main()
 end
 
 bdct.animator = CreateFrame("frame", nil, UIParent)
@@ -475,7 +475,7 @@ function bdct.animator:main(elapsed)
 	end
 
 	-- incoming
-	--[[local lastframe = nil
+	local lastframe = nil
 	local level = 1
 	for k, v in pairs(incoming_animate) do
 		v:SetFrameLevel(level)
@@ -488,7 +488,7 @@ function bdct.animator:main(elapsed)
 		end
 		lastframe = v
 		level = level + 1
-	end--]]
+	end
 end
 bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 	self.total = self.total + elapsed
