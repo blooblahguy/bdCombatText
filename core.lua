@@ -240,9 +240,9 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				over = over + data.over
 				count = count + 1
 				if (not school and data.school) then
-					colors.r = COMBATLOG_DEFAULT_COLORS.schoolColoring[extra.school].r
-					colors.g = COMBATLOG_DEFAULT_COLORS.schoolColoring[extra.school].g
-					colors.b = COMBATLOG_DEFAULT_COLORS.schoolColoring[extra.school].b
+					colors.r = COMBATLOG_DEFAULT_COLORS.schoolColoring[data.school].r
+					colors.g = COMBATLOG_DEFAULT_COLORS.schoolColoring[data.school].g
+					colors.b = COMBATLOG_DEFAULT_COLORS.schoolColoring[data.school].b
 					school = data.school
 					--print('school', data.school)
 					--print(schoolColors[data.school], unpack(schoolColors[data.school]))
