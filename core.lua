@@ -137,9 +137,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 		if (arg21) then arg21 = 1 else arg21 = 0 end
 		-- if (arg23) then arg23 = 1 else arg23 = 0 end crushing
 		data.crit = data.crit + arg21	
-		print(spellSchool)
-		print(arg17)
-		data.school = spellSchool or arg17 or false
+		data.school = arg17 or false
 		--data.less = data.less + (arg18 or 0)
 		--data.less = data.less + (arg19 or 0)
 		data.less = data.less + (arg20 or 0)
@@ -241,11 +239,14 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				less = less + data.less
 				over = over + data.over
 				count = count + 1
-				if (not school and data.school and schoolColors[data.school]) then
+				if (not school and data.school) then
+					colors.r = COMBATLOG_DEFAULT_COLORS.schoolColoring[extra.school].r
+					colors.g = COMBATLOG_DEFAULT_COLORS.schoolColoring[extra.school].g
+					colors.b = COMBATLOG_DEFAULT_COLORS.schoolColoring[extra.school].b
 					school = data.school
-					print('school', data.school)
-					print(schoolColors[data.school], unpack(schoolColors[data.school]))
-					colors = unpack(schoolColors[data.school])
+					--print('school', data.school)
+					--print(schoolColors[data.school], unpack(schoolColors[data.school]))
+					print(unpack(colors))
 				end
 			end
 
