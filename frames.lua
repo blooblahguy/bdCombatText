@@ -27,6 +27,7 @@ local incoming_entries = {}
 function GetFrame(parent)
 	local frame = table.remove(frame_cache) or CreateFrame("Frame", nil, UIParent)
 	frame:SetParent(parent)
+	frame:ClearAllPoints()
 
 	local frameheight = 12+config.outgoingfontsize
 	
@@ -71,6 +72,7 @@ function GetFrame(parent)
 	return frame
 end
 function ReleaseFrame(frame)
+	frame:ClearAllPoints()
 	frame:Hide()
 	frame.text:SetText("")
 	frame.icon:SetTexture("")

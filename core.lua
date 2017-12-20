@@ -354,7 +354,7 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				showcrit = count / crit > .5 or false
 			end
 
-			bdct:animate(bdct.incoming, timestamp, icon, text, showcrit)
+			--bdct:animate(bdct.incoming, timestamp, icon, text, showcrit)
 		end
 	end
 
@@ -404,7 +404,7 @@ function bdct:animate(parent, timestamp, icon, text, showcrit)
 
 	end
 
-	bdct.animator:main()
+	--bdct.animator:main()
 end
 
 bdct.animator = CreateFrame("frame", nil, UIParent)
@@ -459,6 +459,9 @@ function bdct.animator:main(elapsed)
 	local lastframe = nil
 	local level = 1
 	for k, v in pairs(outgoing_animate) do
+		v:ClearAllPoints()
+	end
+	for k, v in pairs(outgoing_animate) do
 		v:SetFrameLevel(level)
 		local alpha = v:GetAlpha() > .5 and 1 or v:GetAlpha() * 2
 		v:SetHeight(v:GetHeight()*alpha)
@@ -472,7 +475,7 @@ function bdct.animator:main(elapsed)
 	end
 
 	-- incoming
-	local lastframe = nil
+	--[[local lastframe = nil
 	local level = 1
 	for k, v in pairs(incoming_animate) do
 		v:SetFrameLevel(level)
@@ -485,7 +488,7 @@ function bdct.animator:main(elapsed)
 		end
 		lastframe = v
 		level = level + 1
-	end
+	end--]]
 end
 bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 	self.total = self.total + elapsed
@@ -494,10 +497,10 @@ bdct.animator:SetScript("OnUpdate", function(self, elapsed)
 	-- animate alpha (20fps)
 	-------------------------
 	-- outgoing
-	if (self.total > 0.01) then
-		self.total = 0
+	--if (self.total > 0.01) then
+	--	self.total = 0
 		bdct.animator:main(elapsed)
-	end
+	--end
 end)
 
 	
