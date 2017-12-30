@@ -147,6 +147,17 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 			data.amount = spellID or 0
 			data.spellID = 6603 -- auto attack spell			
 		end
+
+		if (subevent == "ENVIRONMENTAL_DAMAGE") then
+			data.amount = spellName
+			data.spellID = 193267
+			--print(spellSchool)
+			--print(spellName)
+			--print(spellID)
+		end
+
+		print(subevent)
+		print(...)
 		data.prefix = "damage"
 	elseif (string.find(subevent, "_MISSED")) then
 		data.amount = 0
@@ -199,7 +210,7 @@ bdct.combat_parser:SetScript("OnEvent", function(self, event, ...)
 end)
 
 -- now lets parse out the entires in each array and then clear the tables for more grouping
---[[local schoolColoring = {
+local schoolColoring = {
 	[SCHOOL_MASK_NONE]	= {a=1.0,r=1.00,g=1.00,b=1.00};
 	[SCHOOL_MASK_PHYSICAL]	= {a=1.0,r=1.00,g=1.00,b=0.00};
 	[SCHOOL_MASK_HOLY] 	= {a=1.0,r=1.00,g=0.90,b=0.50};
@@ -208,7 +219,9 @@ end)
 	[SCHOOL_MASK_FROST] 	= {a=1.0,r=0.50,g=1.00,b=1.00};
 	[SCHOOL_MASK_SHADOW] 	= {a=1.0,r=0.50,g=0.50,b=1.00};
 	[SCHOOL_MASK_ARCANE] 	= {a=1.0,r=1.00,g=0.50,b=1.00};
-};--]]
+	['healing'] = {a=1.0,r=1.00,g=1.00,b=1.00};
+	['auto'] = {a=1.0,r=1.00,g=1.00,b=1.00};
+};
 bdct.data_parser = CreateFrame("frame", nil, UIParent)
 bdct.data_parser.inctotal = 0
 bdct.data_parser.outtotal = 0
@@ -240,13 +253,10 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				over = over + data.over
 				count = count + 1
 				if (not school and data.school) then
-					colors.r = COMBATLOG_DEFAULT_COLORS.schoolColoring[data.school].r
-					colors.g = COMBATLOG_DEFAULT_COLORS.schoolColoring[data.school].g
-					colors.b = COMBATLOG_DEFAULT_COLORS.schoolColoring[data.school].b
+					colors.r = schoolColoring[data.school].r
+					colors.g = schoolColoring[data.school].g
+					colors.b = schoolColoring[data.school].b
 					school = data.school
-					--print('school', data.school)
-					--print(schoolColors[data.school], unpack(schoolColors[data.school]))
-					print(unpack(colors))
 				end
 			end
 
@@ -315,12 +325,12 @@ bdct.data_parser:SetScript("OnUpdate", function(self, elapsed)
 				less = less + data.less
 				over = over + data.over
 				count = count + 1
-				--[[if (not school and data.school and #schoolColoring[data.school]) then
+				if (not school and data.school) then
+					colors.r = schoolColoring[data.school].r
+					colors.g = schoolColoring[data.school].g
+					colors.b = schoolColoring[data.school].b
 					school = data.school
-					print('school', data.school)
-					print(schoolColoring[data.school]. unpack(schoolColoring[data.school]))
-					colors = unpack(schoolColoring[data.school])
-				end--]]
+				end
 			end
 
 			
