@@ -1,3 +1,5 @@
+local addon, bdct = ...
+
 local media = {
 	flat = "Interface\\Buttons\\WHITE8x8",
 	font = "fonts\\ARIALN.ttf"
